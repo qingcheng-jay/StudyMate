@@ -1,0 +1,28 @@
+#清单文本
+
+# 环境变量
+python-dotenv>=1.0,<2.0
+
+# LLM 对话（OpenAI 兼容接口）
+openai>=1.40,<2.0
+
+# Agent（LangChain 生态）
+langchain>=1.4,<2.0
+langgraph>=1.0,<2.0
+langchain-openai>=0.2,<1.0
+
+# RAG（向量库与文本分片）
+langchain-chroma>=1.1,<2.0
+langchain-text-splitters>=1.0,<2.0
+chromadb>=1.0,<2.0
+pymupdf>=1.24,<2.0
+overrides>=7.0,<8.0
+
+# 数据库  ORM 框架（对象关系映射）
+SQLAlchemy>=2.0,<3.0
+
+# 配置文件
+PyYAML>=6.0,<7.0
+
+# Streamlit 前端（streamlit run app.py）
+streamlit>=1.40,<2.0

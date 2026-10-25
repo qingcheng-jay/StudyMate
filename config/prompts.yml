@@ -1,0 +1,2 @@
+# 提示词文件路径（相对于工程根目录）
+main_prompt_path: prompts/main_prompt.txt

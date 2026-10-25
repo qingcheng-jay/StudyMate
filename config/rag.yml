@@ -1,0 +1,4 @@
+# RAG 相关配置（Embedding 模型与批次参数；API Key 只放 .env，禁止写入本文件）
+embedding_model_name: text-embedding-v1
+embedding_base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+embedding_batch_size: 10

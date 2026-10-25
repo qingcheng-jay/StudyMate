@@ -1,0 +1,9 @@
+# ChromaDB 向量库配置
+collection_name: study_materials
+persist_directory: data/chroma
+k: 4
+min_score: 0.3   # 相关度阈值（0-1）：低于此分的片段视为不相关，过滤掉避免污染提示词
+
+chunk_size: 500
+chunk_overlap: 50
+separators: ["\n\n", "\n", "。", "！", "？", ".", "!", "?", " ", ""]
