@@ -150,8 +150,21 @@ def delete_plan(db: Session, plan_id: int) -> bool:
 # ---------- 学习任务 ----------
 
 
-def create_task(db: Session, title: str, due_date: str = "") -> dict:
-    task = StudyTask(title=title, due_date=due_date or "")
+def _validate_due_date(value: str | None) -> str:
+    """空日期表示不设截止时间，其余必须为真实的 YYYY-MM-DD 日期。"""
+    if value is None or value == "":
+        return ""
+    try:
+        if not isinstance(value, str) or date.fromisoformat(value).isoformat() != value:
+            raise ValueError
+    except ValueError:
+        raise ValueError("截止日期必须为有效的 YYYY-MM-DD 日期，或留空") from None
+    return value
+
+
+def create_task(db: Session, title: str, due_date: str | None = "") -> dict:
+    due_date = _validate_due_date(due_date)
+    task = StudyTask(title=title, due_date=due_date)
     db.add(task)
     db.flush()  # flush 以拿到自增 id
     add_record(db, "task_created", f"创建任务 #{task.id}：{title}")
@@ -177,11 +190,13 @@ def update_task(db: Session, task_id: int, fields: dict) -> dict | None:
     if t is None:
         return None
 
+    # 在修改任何字段前校验，避免非法日期导致部分更新。
+    due_date = _validate_due_date(fields["due_date"]) if "due_date" in fields else None
     new_status = fields.get("status")
     if "title" in fields and fields["title"]:
         t.title = fields["title"]
     if "due_date" in fields:
-        t.due_date = fields["due_date"] or ""
+        t.due_date = due_date
 
     if new_status in ("pending", "completed") and new_status != t.status:
         t.status = new_status

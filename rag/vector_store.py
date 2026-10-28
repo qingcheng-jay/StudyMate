@@ -38,6 +38,7 @@ class VectorStoreService:
             collection_name=chroma_conf["collection_name"],
             embedding_function=get_embed_model(),
             persist_directory=get_abs_path(chroma_conf["persist_directory"]),
+            collection_metadata={"hnsw:space": "cosine"},
             client_settings=Settings(
                 anonymized_telemetry=False,
                 chroma_product_telemetry_impl=f"{__name__}._NullTelemetry",
@@ -111,17 +112,22 @@ class VectorStoreService:
         """删除该文档的全部向量（文档删除时调用）。"""
         self.vector_store.delete(where={"doc_id": doc_id})
 
-    def has_document(self, doc_id: int) -> bool:
-        """该文档是否已向量化（启动回填判断用）。"""
-        res = self.vector_store.get(where={"doc_id": doc_id}, limit=1)
-        return bool(res and res.get("ids"))
+    def has_document(self, doc_id: int, chunks: list[dict]) -> bool:
+        """检查该文档的全部分块 ID，避免部分写入被误判为完成。"""
+        expected = {f"doc{doc_id}_c{c.get('index', i)}" for i, c in enumerate(chunks)}
+        res = self.vector_store.get(where={"doc_id": doc_id}, include=[])
+        return bool(expected) and set(res.get("ids", [])) == expected
 
     def search(self, query: str, k: int = 4, min_score: float = 0.0) -> list[dict]:
         """语义检索 top-k：返回 [{text, filename, page, score}]，score < min_score 的片段被过滤。"""
         if not query.strip():
             return []
 
-        scored = self.vector_store.similarity_search_with_relevance_scores(query, k=k)
+        # Chroma 返回 cosine 距离；转换为相似度，并消除浮点误差造成的越界。
+        scored = [
+            (doc, max(0.0, min(1.0, 1.0 - distance)))
+            for doc, distance in self.vector_store.similarity_search_with_score(query, k=k)
+        ]
         return [
             {
                 "text": d.page_content,

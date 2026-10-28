@@ -31,7 +31,7 @@ class KnowledgeSearchService(object):
             note = (
                 "知识库为空，尚未上传任何资料。"
                 if not docs
-                else "向量库中暂无可检索的内容。"
+                else "没有找到足够相关的资料片段，或资料尚未完成索引。"
             )
             return {"ok": True, "found": False, "chunks": [], "sources": [], "note": note}
 
