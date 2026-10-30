@@ -52,12 +52,12 @@ class StudyTask(Base):
 
 
 class LearningRecord(Base):
-    """学习记录表：任务/计划事件 + 学习时长（kind='session' 时 seconds 计时）。"""
+    """学习记录表：任务和计划事件；保留旧时长字段以兼容已有数据库。"""
 
     __tablename__ = "learning_records"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    kind: Mapped[str] = mapped_column(String(30))  # plan_created/task_created/task_completed/task_deleted/session
+    kind: Mapped[str] = mapped_column(String(30))  # plan_created/task_created/task_completed/task_deleted
     entry: Mapped[str] = mapped_column(Text, default="")
     seconds: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
