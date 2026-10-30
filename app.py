@@ -52,15 +52,6 @@ _bootstrap()
 # ---------- 通用小工具 ----------
 
 
-def fmt_duration(seconds: int) -> str:
-    """秒 → 「X 小时 Y 分」。"""
-    seconds = int(seconds or 0)
-    if seconds < 60:
-        return f"{seconds} 秒"
-    h, m = divmod(seconds // 60, 60)
-    return f"{h} 小时 {m} 分" if h else f"{m} 分"
-
-
 def confirm_button(label: str, key: str) -> bool:
     """两段式确认按钮（替代原前端的 window.confirm）：第一次点进入确认态，第二次才执行。"""
     if st.session_state.get("confirm_key") == key:
@@ -78,22 +69,6 @@ def confirm_button(label: str, key: str) -> bool:
         st.session_state["confirm_key"] = key
         st.rerun()
     return False
-
-
-def heartbeat() -> None:
-    """学习心跳：首次进入只记起点不计时；此后交互间隔 ≥60 秒才累计 +60 秒。"""
-    now = time.time()
-    last = st.session_state.get("last_heartbeat")
-    if last is None:  # 本会话第一次交互：只记时间起点，不虚加 60 秒
-        st.session_state["last_heartbeat"] = now
-        return
-    if now - last >= 60:
-        st.session_state["last_heartbeat"] = now
-        try:
-            with session_scope() as db:
-                repo.heartbeat(db)
-        except Exception:
-            pass  # 心跳失败不影响页面
 
 
 def config_warnings() -> None:
@@ -144,11 +119,10 @@ def page_dashboard() -> None:
         today_tasks = repo.tasks_of_today(db)
         plans = repo.list_plans(db)
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3 = st.columns(3)
     c1.metric("今日任务", f"{len(today_tasks)} 项")
     c2.metric("任务完成率", stats["completion_rate"])
-    c3.metric("累计学习", fmt_duration(stats["study_seconds"]))
-    c4.metric("当前计划", plans[0]["topic"] if plans else "—")
+    c3.metric("当前计划", plans[0]["topic"] if plans else "—")
 
     left, right = st.columns(2)
     with left:
@@ -475,11 +449,10 @@ def page_stats() -> None:
         stats = repo.get_statistics(db)
         records = repo.list_records(db, 50)
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3 = st.columns(3)
     c1.metric("学习天数", f"{stats['study_days']} 天")
     c2.metric("完成任务", f"{stats['tasks_completed']} / {stats['tasks_total']}")
     c3.metric("完成率", stats["completion_rate"])
-    c4.metric("累计学习", fmt_duration(stats["study_seconds"]))
 
     st.subheader("最近动态")
     events = [r for r in records if r["kind"] != "session"][:12]
@@ -526,7 +499,6 @@ def main() -> None:
         st.divider()
         config_warnings()
 
-    heartbeat()
     PAGES_FN[page]()
 
 
