@@ -161,7 +161,7 @@ def complete_task(
 def get_learning_records(
     limit: Annotated[int, Field(description="返回条数，默认10")] = 10,
 ) -> str:
-    """查询最近的学习记录（计划/任务事件 + 学习时长）。"""
+    """查询最近的计划和任务学习记录。"""
 
     def _records(limit: int) -> dict:
         with session_scope() as db:
@@ -171,9 +171,9 @@ def get_learning_records(
     return _safe(_records, limit=limit)
 
 
-@tool(description="获取学习统计（学习天数/任务数/完成率/学习时长）。用户问学习数据/统计时调用。")
+@tool(description="获取学习统计（学习天数/任务数/完成率）。用户问学习数据/统计时调用。")
 def get_statistics() -> str:
-    """统计学习数据：学习天数、任务数、完成率、计划数、学习时长。"""
+    """统计学习数据：学习天数、任务数、完成率、计划数。"""
 
     def _stats() -> dict:
         with session_scope() as db:
