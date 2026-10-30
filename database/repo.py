@@ -15,7 +15,7 @@ rag/rag_service.py 与 rag/backfill.py（知识库）都调用这里，
 # 菜谱D 删：get 问在不在 → 留念想 → delete → 报真假
 #        精讲：delete_plan   同款：delete_task / delete_record（不记流水）/ delete_document（还路径）
 # 菜谱E 特殊：各有各的剧情
-#        heartbeat（同日+60秒）/ update_task（部分更新+状态机）/ record_chat_turn（首轮自动建会话）
+#        update_task（部分更新+状态机）/ record_chat_turn（首轮自动建会话）
 #        tasks_of_today（或条件）/ get_statistics（聚合统计）/ delete_chat_session（先批量删消息）
 from datetime import date, datetime
 
@@ -60,15 +60,14 @@ def _record_dict(r: LearningRecord) -> dict:
         "time": r.created_at.isoformat(timespec="seconds"),
         "kind": r.kind,
         "entry": r.entry,
-        "seconds": r.seconds,
     }
 
 
 # ---------- 学习记录 ----------
 
 
-def add_record(db: Session, kind: str, entry: str, seconds: int = 0) -> None:
-    db.add(LearningRecord(kind=kind, entry=entry, seconds=seconds))
+def add_record(db: Session, kind: str, entry: str) -> None:
+    db.add(LearningRecord(kind=kind, entry=entry))
 
 
 def list_records(db: Session, limit: int = 10) -> list[dict]:
@@ -89,25 +88,6 @@ def delete_record(db: Session, record_id: int) -> bool:
         return False
     db.delete(r)
     return True
-
-
-def heartbeat(db: Session) -> None:
-    """学习心跳：每次 +60 秒，同一天复用同一条 session 记录。"""
-    today = date.today()
-    row = (
-        db.query(LearningRecord)
-        .filter(
-            LearningRecord.kind == "session",
-            func.date(LearningRecord.created_at) == today.isoformat(),
-        )
-        .first()
-    )
-    if row:
-        row.seconds += 60
-    else:
-        db.add(
-            LearningRecord(kind="session", entry="学习会话", seconds=60)
-        )
 
 
 # ---------- 学习计划 ----------
@@ -247,9 +227,6 @@ def get_statistics(db: Session) -> dict:
         or 0
     )
     plans_total = db.query(func.count(StudyPlan.id)).scalar() or 0
-    study_seconds = (
-        db.query(func.coalesce(func.sum(LearningRecord.seconds), 0)).scalar() or 0
-    )
     return {
         "study_days": int(study_days),
         "tasks_total": int(tasks_total),
@@ -258,7 +235,6 @@ def get_statistics(db: Session) -> dict:
             f"{tasks_completed / tasks_total * 100:.0f}%" if tasks_total else "0%"
         ),
         "plans_total": int(plans_total),
-        "study_seconds": int(study_seconds),
     }
 
 
